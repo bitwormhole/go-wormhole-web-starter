@@ -1,6 +1,8 @@
 package gin_starter
 
 import (
+	"net/http"
+
 	"github.com/bitwormhole/go-wormhole-core/application"
 	"github.com/gin-gonic/gin"
 )
@@ -10,9 +12,10 @@ type GinWebController interface {
 }
 
 type GinServerContainer struct {
-	port        int
-	engine      *gin.Engine
-	controllers []GinWebController
+	port           int
+	engine         *gin.Engine
+	controllers    []GinWebController
+	runtimeContext application.RuntimeContext
 }
 
 func (inst *GinServerContainer) Inject(context application.RuntimeContext) error {
@@ -65,6 +68,17 @@ func (inst *GinServerContainer) initControllers() error {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (inst *GinServerContainer) initStatic() error {
+
+	res := inst.runtimeContext.GetResources()
+	engine := inst.engine
+	adapter := &GinFsAdapter{res: res}
+
+	engine.StaticFS("/", http.FS(adapter.GetFS()))
 
 	return nil
 }
